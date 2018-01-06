@@ -9,6 +9,7 @@ namespace TabuSearch
         public List<List<double>> Matrix { get; set; }
         public double SolutionDistance { get; set; }
         public List<int> SolutionVertices { get; set; }
+        public List<List<int>> Population { get; set; }
         
         public List<int> FindGreedyPath()
         {
@@ -49,7 +50,23 @@ namespace TabuSearch
 
             return verticesList;
         }
-      
+
+        public List<int> Shuffle(List<int> list)
+        {
+            var random = new Random();
+            for (int i = 0; i < list.Count; i++)
+            {
+                var indexA = random.Next(0, list.Count);
+                var indexB = random.Next(0, list.Count);
+
+                var temp = list[indexA];
+                list[indexA] = list[indexB];
+                list[indexB] = temp;
+            }
+
+            return list;
+        }
+
         public double CalculateDistance(List<int> list)
         {
             var sum = 0.0;
@@ -62,13 +79,14 @@ namespace TabuSearch
             return sum;
         }
 
-        public void WritePath(List<int> list)
+        public string WritePath(List<int> list)
         {
+            var path = "";
             foreach (var vertex in list)
             {
-                Console.Write(vertex + " ");
+                path += vertex + " ";
             }
-            Console.WriteLine();
+            return path + Environment.NewLine;
         }
     }
 }
