@@ -57,7 +57,7 @@ namespace Projekt3
             MessageBox.Show(Matrix.Count + "");
             var bestDistance = CalculateDistance(bestPath);
             var distances = new List<string>();
-            distances.Add(bestDistance + " ||    " + WritePath(bestPath));
+            //distances.Add(bestDistance + " ||    " + WritePath(bestPath));
             for (int i = 0; i < populationSize; i++)
             {
                 Population.Add(Shuffle(SolutionVertices));
@@ -74,6 +74,29 @@ namespace Projekt3
             SolutionDistance = CalculateDistance(SolutionVertices);
 
             return distances;
+        }
+
+        public List<int> oxCrossover(List<int> parentA, List<int> parentB)
+        {
+            var random = new Random();
+            var indexA = random.Next(0, parentA.Count);
+            var indexB = random.Next(0, parentB.Count);
+
+            if (indexB > indexA)
+            {
+                var temp = indexA;
+                indexA = indexB;
+                indexB = temp;
+            }
+
+            //if (indexB - indexA == 0 || indexB - indexA < 3)
+            //{
+            //    if (indexB + 3 > parentA.Count - 1)
+            //        indexA -= 3;
+            //}
+            var child = new List<int>();
+
+            return child;
         }
 
         public List<int> Shuffle(List<int> list)

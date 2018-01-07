@@ -7,7 +7,7 @@ namespace Projekt3
 {
     public partial class FormMain : Form
     {
-        private int _populationSize = 100;
+        private int _populationSize = 2;
         public Parser Parser { get; set; } = new Parser();
         public Graph Graph { get; set; }
 
