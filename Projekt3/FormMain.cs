@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
-using TabuSearch;
+
 
 namespace Projekt3
 {
@@ -33,15 +33,28 @@ namespace Projekt3
             {
                 Graph.SolutionVertices.Add(i);
             }
+            Graph.Shuffle(Graph.SolutionVertices);
+            //Graph.SolutionVertices.Add(Graph.SolutionVertices[0]);
         }
 
         private void buttonTest_Click(object sender, EventArgs e)
         {
-
-            for (int i = 0; i < _populationSize; i++)
+            var list = Graph.RunGeneticAlgorithm(_populationSize);
+            foreach (var item in list)
             {
-                Graph.Population.Add(Graph.Shuffle(Graph.SolutionVertices));
+                listBox.Items.Add(item);
             }
+            var path1 = Graph.WritePath(Graph.SolutionVertices);
+            //Graph.Shuffle(Graph.SolutionVertices);
+            //var path2 = Graph.WritePath(Graph.SolutionVertices);
+            //Graph.Shuffle(Graph.SolutionVertices);
+            //var path3 = Graph.WritePath(Graph.SolutionVertices);
+
+            MessageBox.Show(path1);
+            //for (int i = 0; i < _populationSize; i++)
+            //{
+            //    Graph.Population.Add(Graph.Shuffle(Graph.SolutionVertices));
+            //}
 
         }
     }

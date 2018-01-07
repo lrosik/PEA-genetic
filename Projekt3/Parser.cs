@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using TspLibNet.TSP;
 using TspLibNet.TSP.Defines;
 
-namespace TabuSearch
+namespace Projekt3
 {
     public class Parser
     {
