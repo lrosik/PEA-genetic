@@ -76,25 +76,43 @@ namespace Projekt3
             return distances;
         }
 
-        public List<int> oxCrossover(List<int> parentA, List<int> parentB)
+        public List<int> OXCrossover(List<int> parentA, List<int> parentB)
         {
             var random = new Random();
-            var indexA = random.Next(0, parentA.Count);
-            var indexB = random.Next(0, parentB.Count);
+            var indexA = random.Next(0, parentA.Count - 2);
+            var indexB = random.Next(indexA, parentB.Count);
 
-            if (indexB > indexA)
+            var child = new List<int>(parentA.Count);
+
+            for (int i = 0; i < child.Capacity; i++)
             {
-                var temp = indexA;
-                indexA = indexB;
-                indexB = temp;
+                child.Add(-1);
             }
 
-            //if (indexB - indexA == 0 || indexB - indexA < 3)
-            //{
-            //    if (indexB + 3 > parentA.Count - 1)
-            //        indexA -= 3;
-            //}
-            var child = new List<int>();
+            for (int i = indexA; i <= indexB; i++)
+            {
+                child[i] = parentB[i];
+            }
+
+            var indexOfChild = indexB + 1;
+            var indexOfParent = indexB + 1;
+
+            while (child.Contains(-1))
+            {
+                if (indexOfParent >= child.Count)
+                    indexOfParent = 0;
+
+                if (indexOfChild >= child.Count)
+                    indexOfChild = 0;
+                
+                if (!child.Contains(parentA[indexOfParent]))
+                {
+                    child[indexOfChild] = parentA[indexOfParent];
+                    indexOfChild++;
+                }
+                
+                indexOfParent++;
+            }
 
             return child;
         }

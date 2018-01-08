@@ -57,5 +57,11 @@ namespace Projekt3
             //}
 
         }
+
+        private void buttonOX_Click(object sender, EventArgs e)
+        {
+            var list = new List<int>(Graph.OXCrossover(Graph.SolutionVertices, Graph.Shuffle(Graph.SolutionVertices)));
+            listBox.Items.Add(Graph.WritePath(list));
+        }
     }
 }

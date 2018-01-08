@@ -32,6 +32,7 @@
             this.buttonLoadFile = new System.Windows.Forms.Button();
             this.buttonTest = new System.Windows.Forms.Button();
             this.listBox = new System.Windows.Forms.ListBox();
+            this.buttonOX = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // openFileDialog
@@ -66,11 +67,23 @@
             this.listBox.Size = new System.Drawing.Size(455, 563);
             this.listBox.TabIndex = 2;
             // 
+            // buttonOX
+            // 
+            this.buttonOX.Location = new System.Drawing.Point(12, 71);
+            this.buttonOX.Name = "buttonOX";
+            this.buttonOX.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.buttonOX.Size = new System.Drawing.Size(75, 23);
+            this.buttonOX.TabIndex = 3;
+            this.buttonOX.Text = "OX";
+            this.buttonOX.UseVisualStyleBackColor = true;
+            this.buttonOX.Click += new System.EventHandler(this.buttonOX_Click);
+            // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(560, 585);
+            this.Controls.Add(this.buttonOX);
             this.Controls.Add(this.listBox);
             this.Controls.Add(this.buttonTest);
             this.Controls.Add(this.buttonLoadFile);
@@ -86,6 +99,7 @@
         private System.Windows.Forms.Button buttonLoadFile;
         private System.Windows.Forms.Button buttonTest;
         private System.Windows.Forms.ListBox listBox;
+        private System.Windows.Forms.Button buttonOX;
     }
 }
 
