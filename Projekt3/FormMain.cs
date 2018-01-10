@@ -7,7 +7,8 @@ namespace Projekt3
 {
     public partial class FormMain : Form
     {
-        private int _populationSize = 2;
+        private int _populationSize = 4;
+        private int _time = 5;
         public Parser Parser { get; set; } = new Parser();
         public Graph Graph { get; set; }
 
@@ -33,16 +34,16 @@ namespace Projekt3
             {
                 Graph.SolutionVertices.Add(i);
             }
-            Graph.Shuffle(Graph.SolutionVertices);
-            //Graph.SolutionVertices.Add(Graph.SolutionVertices[0]);
+            //Graph.Shuffle(Graph.SolutionVertices);
+            
         }
 
         private void buttonTest_Click(object sender, EventArgs e)
         {
-            var list = Graph.RunGeneticAlgorithm(_populationSize);
+            var list = Graph.RunGeneticAlgorithm(_populationSize, _time);
             foreach (var item in list)
             {
-                listBox.Items.Add(item);
+                listBox.Items.Add(Graph.WritePath(list));
             }
             var path1 = Graph.WritePath(Graph.SolutionVertices);
             //Graph.Shuffle(Graph.SolutionVertices);
@@ -60,7 +61,7 @@ namespace Projekt3
 
         private void buttonOX_Click(object sender, EventArgs e)
         {
-            var list = new List<int>(Graph.OXCrossover(Graph.SolutionVertices, Graph.Shuffle(Graph.SolutionVertices)));
+            var list = new List<int>(Graph.OxCrossover(Graph.SolutionVertices, Graph.Shuffle(Graph.SolutionVertices)));
             listBox.Items.Add(Graph.WritePath(list));
         }
     }

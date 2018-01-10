@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Windows.Forms;
 
 namespace Projekt3
@@ -10,6 +11,7 @@ namespace Projekt3
         public double SolutionDistance { get; set; }
         public List<int> SolutionVertices { get; set; }
         public List<List<int>> Population { get; set; } = new List<List<int>>();
+        public List<int> PopulationIndexes { get; set; }
         
         public List<int> FindGreedyPath()
         {
@@ -51,23 +53,52 @@ namespace Projekt3
             return verticesList;
         }
 
-        public List<string> RunGeneticAlgorithm(int populationSize)
+        public List<int> RunGeneticAlgorithm(int populationSize, int time)
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             var bestPath = new List<int>(SolutionVertices);
-            MessageBox.Show(Matrix.Count + "");
             var bestDistance = CalculateDistance(bestPath);
-            var distances = new List<string>();
-            //distances.Add(bestDistance + " ||    " + WritePath(bestPath));
+            var distances = new List<int>();
+
+            // tworzenie populacji początkowej
             for (int i = 0; i < populationSize; i++)
             {
+                PopulationIndexes.Add(i);
                 Population.Add(Shuffle(SolutionVertices));
-                var currentDistance = CalculateDistance(Population[i]);
-                distances.Add(currentDistance + " ||    " + WritePath(Population[i]));
+                var currentDistance = Convert.ToInt32(CalculateDistance(Population[i]));
+                distances.Add(currentDistance);
+
                 if (currentDistance < bestDistance)
                 {
                     bestDistance = currentDistance;
                     bestPath = new List<int>(Population[i]);
                 }
+            }
+
+
+            var stoppingCondition = false;
+
+            while (!stoppingCondition)
+            {
+                var breedingCandidates = new List<int>(ChooseBreedingCandidates(PopulationIndexes));
+                var availableParents = new short[PopulationIndexes.Count];
+                Array.Clear(availableParents, 0, availableParents.Length);
+                var children = new List<List<int>>();
+
+                for (int i = 0; i < Population.Count; i++)
+                {
+                    if(availableParents[i] == 1)
+                        continue;
+                    children.Add(OxCrossover(Population[i], Population[breedingCandidates[i]]));
+                    children.Add(OxCrossover(Population[breedingCandidates[i]], Population[i]));
+                    availableParents[i] = 1;
+                    availableParents[breedingCandidates[i]] = 1;
+                }
+
+                if (stopwatch.ElapsedMilliseconds / 1000 >= time)
+                    stoppingCondition = true;
             }
 
             SolutionVertices = new List<int>(bestPath);
@@ -76,7 +107,7 @@ namespace Projekt3
             return distances;
         }
 
-        public List<int> OXCrossover(List<int> parentA, List<int> parentB)
+        public List<int> OxCrossover(List<int> parentA, List<int> parentB)
         {
             var random = new Random();
             var indexA = random.Next(0, parentA.Count - 2);
@@ -117,18 +148,28 @@ namespace Projekt3
             return child;
         }
 
+        public void SwapMutate(List<int> list)
+        {
+            var random = new Random();
+            var indexA = random.Next(0, list.Count);
+            var indexB = random.Next(0, list.Count);
+
+            Swap(list, indexA, indexB);
+        }
+
         public List<int> Shuffle(List<int> list)
         {
+            var shuffledList = new List<int>(list);
             var random = new Random();
             for (var i = 0; i < list.Count; i++)
             {
                 var indexA = random.Next(0, list.Count);
                 var indexB = random.Next(0, list.Count);
 
-                Swap(list, indexA, indexB);
+                Swap(shuffledList, indexA, indexB);
             }
 
-            return list;
+            return shuffledList;
         }
 
         public void Swap(List<int> list, int indexA, int indexB)
@@ -138,6 +179,37 @@ namespace Projekt3
             list[indexB] = temp;
         }
 
+        public List<int> ChooseBreedingCandidates(List<int> list)
+        {
+            var random = new Random();
+            var breedingList = new List<int>(Shuffle(list));
+            var i = 0;
+            do
+            {
+                if (i != breedingList[i])
+                {
+                    i++;
+                }
+                else
+                {
+                    var index = random.Next(0, breedingList.Count);
+                    Swap(breedingList, breedingList[i], index);
+                }
+            } while (i < breedingList.Count);
+
+            return breedingList;
+        }
+
+        public short CheckNumberOfZeroes(short[] array)
+        {
+            short numberOfZeroes = 0;
+            for (int i = 0; i < array.Length; i++)
+            {
+                if (array[i] == 0)
+                    numberOfZeroes++;
+            }
+            return numberOfZeroes;
+        }
 
         public double CalculateDistance(List<int> list)
         {
