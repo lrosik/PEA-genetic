@@ -1,17 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 
 namespace Projekt3
 {
     public class Graph
     {
+        private Random random = new Random();
+        private double lastBestSolution;
+        public FormMain FormMain { get; set; }
+        public double CrossoverProbability { get; set; }
+        public double MutationProbability { get; set; }
         public List<List<double>> Matrix { get; set; }
         public double SolutionDistance { get; set; }
         public List<int> SolutionVertices { get; set; }
         public List<List<int>> Population { get; set; } = new List<List<int>>();
-        public List<int> PopulationIndexes { get; set; }
+        public int PopulationSize { get; set; }
+        public List<double> VarianceList { get; set; } = new List<double>();
         
         public List<int> FindGreedyPath()
         {
@@ -48,63 +56,130 @@ namespace Projekt3
                 visitedVertices[index] = 1;
             }
 
-            verticesList.Add(0); // dodanie punktu początkowego jako powrót
+            //verticesList.Add(0); // dodanie punktu początkowego jako powrót
 
             return verticesList;
         }
 
-        public List<int> RunGeneticAlgorithm(int populationSize, int time)
+        public void RunGeneticAlgorithm(int populationSize, int time, int mutationType)
         {
+            Population.Clear();
+
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            var bestPath = new List<int>(SolutionVertices);
-            var bestDistance = CalculateDistance(bestPath);
-            var distances = new List<int>();
-
             // tworzenie populacji początkowej
-            for (int i = 0; i < populationSize; i++)
+            for (int i = 0; i < populationSize-1; i++)
             {
-                PopulationIndexes.Add(i);
                 Population.Add(Shuffle(SolutionVertices));
-                var currentDistance = Convert.ToInt32(CalculateDistance(Population[i]));
-                distances.Add(currentDistance);
-
-                if (currentDistance < bestDistance)
-                {
-                    bestDistance = currentDistance;
-                    bestPath = new List<int>(Population[i]);
-                }
             }
+            Population.Add(FindGreedyPath());
 
+            // sortowanie populacji względem odległości
+            Population = (from n in Population
+                orderby CalculateDistance(n)
+                select n).ToList();
+
+            lastBestSolution = CalculateDistance(Population[0]);
 
             var stoppingCondition = false;
+            var generation = 0;
 
             while (!stoppingCondition)
             {
-                var breedingCandidates = new List<int>(ChooseBreedingCandidates(PopulationIndexes));
-                var availableParents = new short[PopulationIndexes.Count];
-                Array.Clear(availableParents, 0, availableParents.Length);
-                var children = new List<List<int>>();
+                var parentsA = new List<List<int>>();
+                var parentsB = new List<List<int>>();
+                var tempPopulation = new List<List<int>>(Population);
 
-                for (int i = 0; i < Population.Count; i++)
+                // wybór par rodziców
+                while (tempPopulation.Count > 0)
                 {
-                    if(availableParents[i] == 1)
-                        continue;
-                    children.Add(OxCrossover(Population[i], Population[breedingCandidates[i]]));
-                    children.Add(OxCrossover(Population[breedingCandidates[i]], Population[i]));
-                    availableParents[i] = 1;
-                    availableParents[breedingCandidates[i]] = 1;
+                    var listOfProbabilities = CalculateProbabilityOfPopulation(tempPopulation);
+                    var probabilitiesSum = listOfProbabilities.Sum();
+
+                    var x = random.Next(0, probabilitiesSum);
+                    var parentIndex = 0;
+
+                    while (x > listOfProbabilities[parentIndex])
+                    {
+                        x -= listOfProbabilities[parentIndex];
+                        parentIndex++;
+                    }
+
+                    if (parentsA.Count > parentsB.Count)
+                    {
+                        parentsB.Add(tempPopulation[parentIndex]);
+                    }
+                    else
+                    {
+                        parentsA.Add(tempPopulation[parentIndex]);
+                    }
+
+                    tempPopulation.RemoveAt(parentIndex);
                 }
 
+                var newPopulation = new List<List<int>>();
+
+                // krzyżowanie
+                for (int i = 0; i < parentsA.Count; i++)
+                {
+                    // prawdopodobieństwo krzyżowania
+                    if (random.NextDouble() <= CrossoverProbability)
+                    {
+                        var childA = OxCrossover(parentsA[i], parentsB[i]);
+                        var childB = OxCrossover(parentsB[i], parentsA[i]);
+                        // prawdopodobieństwo mutacji
+                        if (random.NextDouble() <= MutationProbability)
+                        {
+                            if (mutationType == 0)
+                            {
+                                InvertMutate(childA);
+                                InvertMutate(childB);
+                            }
+                            else if (mutationType == 1)
+                            {
+                                SwapMutate(childA);
+                                SwapMutate(childB);
+                            }
+                        }
+                        newPopulation.Add(childA);
+                        newPopulation.Add(childB);
+                    }
+                }
+
+                // dodanie nowych osobników do populacji
+                Population.AddRange(newPopulation);
+
+                // sortowanie populacji po odległościach ścieżki rosnąco
+                Population = (from n in Population
+                    orderby CalculateDistance(n)
+                    select n).ToList();
+
+                // usuwanie nadmiarowych osobników w populacji
+                while (Population.Count > PopulationSize)
+                {
+                    Population.RemoveAt(Population.Count - 1);
+                }
+
+                var currentBest = CalculateDistance(Population[0]);
+                if (currentBest < lastBestSolution)
+                {
+                    MutationProbability = 0.01;
+                    lastBestSolution = currentBest;
+                }
+                else
+                {
+                    MutationProbability += 0.1;
+                }
+
+                FormMain.AddToListBox(currentBest, generation, mutationType);
+
+                // sprawdzenie warunku końca
                 if (stopwatch.ElapsedMilliseconds / 1000 >= time)
                     stoppingCondition = true;
+
+                generation++;
             }
-
-            SolutionVertices = new List<int>(bestPath);
-            SolutionDistance = CalculateDistance(SolutionVertices);
-
-            return distances;
         }
 
         public List<int> OxCrossover(List<int> parentA, List<int> parentB)
@@ -150,23 +225,38 @@ namespace Projekt3
 
         public void SwapMutate(List<int> list)
         {
-            var random = new Random();
             var indexA = random.Next(0, list.Count);
             var indexB = random.Next(0, list.Count);
 
             Swap(list, indexA, indexB);
         }
 
+        public void InvertMutate(List<int> list)
+        {
+            var indexA = 0;
+            var indexB = 0;
+
+            do
+            {
+                indexA = random.Next(0, list.Count);
+                indexB = random.Next(indexA, list.Count);
+            } while (indexA == indexB);
+
+            list.Reverse(indexA, indexB - indexA + 1);
+        }
+
         public List<int> Shuffle(List<int> list)
         {
             var shuffledList = new List<int>(list);
-            var random = new Random();
+            
             for (var i = 0; i < list.Count; i++)
             {
                 var indexA = random.Next(0, list.Count);
                 var indexB = random.Next(0, list.Count);
 
                 Swap(shuffledList, indexA, indexB);
+
+                //MessageBox.Show(indexA + Environment.NewLine + indexB);
             }
 
             return shuffledList;
@@ -179,25 +269,88 @@ namespace Projekt3
             list[indexB] = temp;
         }
 
-        public List<int> ChooseBreedingCandidates(List<int> list)
+        public List<double> CalculateProbabilityToDie(List<List<int>> pop)
         {
-            var random = new Random();
-            var breedingList = new List<int>(Shuffle(list));
-            var i = 0;
-            do
-            {
-                if (i != breedingList[i])
-                {
-                    i++;
-                }
-                else
-                {
-                    var index = random.Next(0, breedingList.Count);
-                    Swap(breedingList, breedingList[i], index);
-                }
-            } while (i < breedingList.Count);
+            var sum = CalculateSumOfDistnaces(pop);
 
-            return breedingList;
+            var listOfProbabilities = new List<double>();
+            foreach (var item in pop)
+            {
+                listOfProbabilities.Add(CalculateDistance(item) / sum);
+            }
+
+            return listOfProbabilities;
+        }
+
+        public double CalculateSumOfDistnaces(List<List<int>> pop)
+        {
+            var sum = 0.0;
+
+            foreach (var item in pop)
+            {
+                sum += CalculateDistance(item);
+            }
+
+            return sum;
+        }
+
+        public List<int> CalculateProbabilityOfPopulation(List<List<int>> pop)
+        {
+            var listOfProbabilities = new List<int>();
+            var sum = 0.0;
+
+            foreach (var item in pop)
+            {
+                sum += CalculateDistance(item);
+                //listOfProbabilities.Add(CalculateProbabilityOfOne(item));
+            }
+
+            foreach (var item in pop)
+            {
+                listOfProbabilities.Add(Convert.ToInt32((sum / CalculateDistance(item))*100));
+            }
+
+            return listOfProbabilities;
+        }
+
+        public double CalculateProbabilityOfOne(List<int> list)
+        {
+            return 1/CalculateDistance(list)*100000;
+        }
+
+        public bool ArePathsEqual(List<int> listA, List<int> listB)
+        {
+            var areEqual = true;
+
+            for (int i = 0; i < listA.Count; i++)
+            {
+                if (listA[i] != listB[i])
+                    areEqual = false;
+            }
+
+            return areEqual;
+        }
+
+        public double CalculateVariance(List<List<int>> list)
+        {
+            var distances = new List<double>();
+
+            foreach (var path in list)
+            {
+                distances.Add(CalculateDistance(path));
+            }
+
+            var average = distances.Sum() / list.Count;
+            var tempList = new List<double>();
+
+            foreach (var distance in distances)
+            {
+                tempList.Add(Math.Pow(distance - average, 2));
+            }
+
+            var variance = distances.Sum() / list.Count;
+
+            return variance;
         }
 
         public short CheckNumberOfZeroes(short[] array)
@@ -226,6 +379,16 @@ namespace Projekt3
         }
 
         public string WritePath(List<int> list)
+        {
+            var path = "";
+            foreach (var vertex in list)
+            {
+                path += vertex + " ";
+            }
+            return path + Environment.NewLine;
+        }
+
+        public string WriteP(short[] list)
         {
             var path = "";
             foreach (var vertex in list)
